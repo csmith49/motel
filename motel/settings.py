@@ -4,6 +4,7 @@ MERGE_NOUN_CHUNKS = False
 
 USE_VERBOSE_DEPENDENCIES = True
 
+GET_LABELS_FROM_TEXT = True
 
 # controlling log behavior
 LOG_CONFIG = {

@@ -9,4 +9,4 @@ $(VENV)/bin/activate: requirements.txt
 	touch $(VENV)/bin/activate
 
 test: env
-	$(PYTHON) motel process data/test.txt
+	$(PYTHON) motel process data/lincoln-pob.txt

@@ -9,7 +9,6 @@ db = Database()
 
 # vertices represent the things we want to select
 class Vertex(db.Entity):
-    value = Required(str)
     attributes = Set("Attribute")
     incoming = Set("Edge")
     outgoing = Set("Edge")
@@ -17,20 +16,29 @@ class Vertex(db.Entity):
 
     @classmethod
     @db_session
-    def make(cls, value, **kwargs):
+    def make(cls, **kwargs):
         # construct the vertex and add all found attributes from kwargs
-        vertex = cls(value=value)
+        vertex = cls()
         for key, item in kwargs.items():
             Attribute(kind=key, value=item, vertex=vertex)
         # commit the changes so we can pull out the primary key
         commit()
-        logger.info(f"Constructed vertex {vertex.id} with value '{value}'")
+        logger.info(f"Constructed vertex {vertex.id}")
         return vertex.id
+
+    @property
+    def edges(self):
+        yield from self.incoming
+        yield from self.outgoing
 
 class Attribute(db.Entity):
     kind = Required(str)
     value = Required(str)
     vertex = Required(Vertex)
+
+    @property
+    def tuple(self):
+        return (self.kind, self.value)
 
 class Edge(db.Entity):
     kind = Required(str)
@@ -45,3 +53,7 @@ class Edge(db.Entity):
         commit()
         logger.info(f"Constructed edge {source_id} --{label}-> {destination_id}")
         return edge.id
+
+    @property
+    def tuple(self):
+        return (self.source.id, self.kind, self.destination.id)
