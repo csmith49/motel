@@ -6,6 +6,13 @@ USE_VERBOSE_DEPENDENCIES = True
 
 GET_LABELS_FROM_TEXT = True
 
+# weighting neighborhood structure
+EDGE_WEIGHTS = {
+    "motel" : 1,
+    "spacy" : 1
+}
+EDGE_WEIGHT_DEFAULT = 1
+
 # controlling log behavior
 LOG_CONFIG = {
     # overall config

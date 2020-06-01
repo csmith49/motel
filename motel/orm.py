@@ -1,5 +1,5 @@
 from pony.orm import *
-import log
+import log, settings
 
 logger = log.get("orm")
 
@@ -31,6 +31,23 @@ class Vertex(db.Entity):
         yield from self.incoming
         yield from self.outgoing
 
+    @property
+    def json(self):
+        attrs = dict(map(lambda a: a.tuple, self.attributes))
+        attrs["identifier"] = self.id
+        return attrs
+
+    def neighbors(self, distance=1):
+        for edge in self.incoming:
+            if edge.weight <= distance:
+                yield edge.source
+                yield from edge.source.neighbors(distance=distance - edge.weight)
+        for edge in self.outgoing:
+            if edge.weight <= distance:
+                yield edge.destination
+                yield from edge.source.neighbors(distance=distance - edge.weight)
+
+# attributes label vertices
 class Attribute(db.Entity):
     kind = Required(str)
     value = Required(str)
@@ -40,6 +57,7 @@ class Attribute(db.Entity):
     def tuple(self):
         return (self.kind, self.value)
 
+# edges connect vertices
 class Edge(db.Entity):
     kind = Required(str)
     source = Required(Vertex, reverse="outgoing")
@@ -55,5 +73,33 @@ class Edge(db.Entity):
         return edge.id
 
     @property
-    def tuple(self):
-        return (self.source.id, self.kind, self.destination.id)
+    def json(self):
+        return {
+            "source" : self.source.id,
+            "destination" : self.destination.id,
+            "label" : self.kind
+        }
+
+    @property
+    def weight(self):
+        try:
+            return settings.EDGE_WEIGHTS[self.kind]
+        except: pass
+        try:
+            return settings.EDGE_WEIGHTS[self.kind.split(":")[0]]
+        except: pass
+        return settings.EDGE_WEIGHT_DEFAULT
+
+    @classmethod
+    def between(cls, *vertices):
+        yield from Edge.select(lambda e: e.source in vertices and e.destination in vertices)
+
+# constructing neighborhoods
+def neighborhood(origin, distance=1):
+    vertices = set(origin.neighbors(distance=distance))
+    edges = set(Edge.between(*vertices))
+    return vertices, edges
+
+def positive_vertices():
+    for attr in Attribute.select(lambda a: a.kind == "user:label" and a.value == "positive"):
+        yield attr.vertex
