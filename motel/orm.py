@@ -34,8 +34,10 @@ class Vertex(db.Entity):
     @property
     def json(self):
         attrs = dict(map(lambda a: a.tuple, self.attributes))
-        attrs["identifier"] = self.id
-        return attrs
+        return {
+            "identifier" : self.id,
+            "label" : attrs
+        }
 
     def neighbors(self, distance=1):
         for edge in self.incoming:
