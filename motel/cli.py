@@ -57,8 +57,11 @@ def extract_neighborhoods(input, output):
                 logger.info(f"Found vertex {vertex.id} with positive label. Constructing neighborhood...")
                 vertices, edges = orm.neighborhood(vertex, distance=2)
                 json_rep = {
-                    "vertices" : [v.json for v in vertices],
-                    "edges" : [e.json for e in edges]
+                    "structure" : {
+                        "vertices" : [v.to_json(avoid=["user:label"]) for v in vertices],
+                        "edges" : [e.to_json() for e in edges]
+                    },
+                    "selector" : vertex.id
                 }
                 logger.info(f"Neighborhood for vertex {vertex.id} constructed.")
                 f.write(json.dumps(json_rep))

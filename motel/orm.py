@@ -31,9 +31,10 @@ class Vertex(db.Entity):
         yield from self.incoming
         yield from self.outgoing
 
-    @property
-    def json(self):
+    def to_json(self, avoid=None):
         attrs = dict(map(lambda a: a.tuple, self.attributes))
+        if avoid is not None:
+            attrs = {k : v for k, v in attrs.items() if k not in avoid}
         return {
             "identifier" : self.id,
             "label" : attrs
@@ -74,13 +75,14 @@ class Edge(db.Entity):
         logger.info(f"Constructed edge {source_id} --{label}-> {destination_id}")
         return edge.id
 
-    @property
-    def json(self):
-        return {
+    def to_json(self, avoid=None):
+        edge = {
             "source" : self.source.id,
             "destination" : self.destination.id,
-            "label" : self.kind
         }
+        if avoid is None or (avoid is not None and self.kind not in avoid):
+            edge["label"] = self.kind
+        return edge
 
     @property
     def weight(self):
