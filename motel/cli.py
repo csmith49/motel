@@ -1,9 +1,7 @@
 """Command-line interface for Motel."""
 
-import orm
+import orm, log, img, doc
 import click
-import log
-import img
 from motifs import Motif
 from os import path
 import json
@@ -129,19 +127,19 @@ def evaluate(motifs, documents, output):
         logger.info(f"Motifs loaded. Found {len(motifs)} motifs.")
     image.register_motifs(*motifs)
     # load the document list
-    with open(documents, "r") as f:
-        logger.info(f"Loading documents list from {documents}...")
-        docs = [json.loads(line)["filename"] for line in f.readlines()]
-        logger.info(f"Documents list loaded. Found {len(docs)} documents.")
+    logger.info(f"Loading data set from {documents}...")
+    dataset = doc.Dataset.load(documents)
+    logger.info(f"Data set loaded. Found {len(dataset.documents)} documents.")
     # evaluate
-    for doc in docs:
-        image.evaluate_motifs(doc)
+    for document in dataset.documents:
+        image.evaluate_motifs(document)
     # and write the results
     image.dump(output)
 
 @run.command()
-@click.argument("image", type=str, required=True)
-@click.argument("output", type=str, required=True)
-def analyze_image(image, output):
+@click.option("-i", "--image", type=str, required=True)
+@click.option("-d", "--documents", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
+def analyze_image(image, documents, output):
     # load the sparse image file from MotE
-    motifs = analysis.load_motifs(image)
+    image = img.SparseImage.load(input)

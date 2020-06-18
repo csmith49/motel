@@ -101,16 +101,66 @@ class Edge(db.Entity):
 
 # constructing neighborhoods
 def neighborhood(origin, distance=1):
+    """Finds the neighborhood graph around a single vertex.
+
+    Parameters
+    ----------
+    origin : Vertex
+        `Vertex` entity acting as the "center" of the neighborhood.
+
+    distance : int, optional
+        The maximum distance where `Vertex` entities can be considered neighbors.
+
+    Returns
+    -------
+    Vertex list, Edge list
+        Pair of `Vertex` and `Edge` entity lists describing the neighborhood graph.
+
+    Notes
+    -----
+    Distance calculations are dependent on the edge weight parameters in `settings`.
+
+    See Also
+    --------
+    `Vertex.neighbors` - computation of vertices close to the origin.
+
+    `Edge.between` - computation of all edges between the neighborhood vertices.
+
+    `Edge.weight` - determination of an edge weight, based on values in `settings`.
+
+    """
     vertices = set(origin.neighbors(distance=distance))
     edges = set(Edge.between(*vertices))
     return vertices, edges
 
 def positive_vertices():
+    """All vertices labeled "positive" by the user.
+
+    Yields
+    -------
+    Vertex
+        A `Vertex` entity with the "positive" value for the "user:label" attribute.
+    """
     for attr in Attribute.select(lambda a: a.kind == "user:label" and a.value == "positive"):
         yield attr.vertex
 
 # context manager for connecting to a database
 class Connection:
+    """Context manager for automatically opening and closing database connections.
+
+    Parameters
+    ----------
+    filepath : str
+        Filepath to the database-to-be-connected-to.
+
+    Examples
+    --------
+    Intended for use as a context manager, as follows:
+    ```
+    with Connection(":memory:"):
+        db.select(...)
+    ```
+    """
     def __init__(self, filepath):
         self._filepath = filepath
     

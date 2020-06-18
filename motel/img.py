@@ -121,15 +121,13 @@ class SparseImage:
         for motif in args:
             self.register_motif(motif)
 
-    def evaluate_motifs(self, filepath):
+    def evaluate_motifs(self, document):
         """Evaluate all registered motifs on a document.
-
-        Modifies the sparse image in place. Evaluating the same document twice will add the resulting points twice.
 
         Parameters
         ----------
-        filepath : str
-            File path where the document-to-be-evaluated is stored.
+        document : doc.Document
+            `doc.Document` object representing the doc-to-be-evaluated.
 
         Notes
         -----
@@ -137,13 +135,13 @@ class SparseImage:
 
         `evaluate_motifs` is *not* idempotent - evaluating the same document multiple times will duplicate the image.
         """
-        with orm.Connection(filepath):
+        with document.connect():
             for motif in self.motifs:
-                logger.info(f"Evaluating motif {motif} on {filepath}...")
+                logger.info(f"Evaluating motif {motif} on {document}...")
                 # do the evaluation
-                values = [Point(filepath, id) for id in motif.evaluate()]
+                values = [document.point(id) for id in motif.evaluate()]
                 self.rows[motif] += values
-                logger.info(f"Motif {motif} finished evaluating on {filepath}. Selected {len(values)} vertices.")
+                logger.info(f"Motif {motif} finished evaluating on {document}. Selected {len(values)} vertices.")
 
     def dump(self, filepath):
         """Writes a sparse image to file.
