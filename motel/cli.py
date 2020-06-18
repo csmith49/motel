@@ -31,8 +31,8 @@ def test():
     print("Motel requirements installed and loaded successfully.")
 
 @run.command()
-@click.argument("input", type=str, required=True)
-@click.argument("output", type=str, default=":memory:")
+@click.option("-i", "--input", type=str, required=True)
+@click.option("-o", "--output", type=str, default=":memory:")
 def process(input, output):
     """Convert a text file to a document.
 
@@ -59,8 +59,8 @@ def process(input, output):
         logger.info(f"Processing of file {input} complete.")
 
 @run.command()
-@click.argument("input", type=str, required=True)
-@click.argument("output", type=str, required=True)
+@click.option("-i", "--input", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
 def extract_neighborhoods(input, output):
     """Generates neighborhoods around labeled points in a document.
 
@@ -99,9 +99,28 @@ def extract_neighborhoods(input, output):
                 logger.info(f"Results written to {output}.")
 
 @run.command()
-@click.argument("motifs", type=str, required=True)
-@click.argument("data", type=str, required=True)
-def evaluate(motifs, data):
+@click.option("-m", "--motifs", type=str, required=True)
+@click.option("-d", "--documents", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
+def evaluate(motifs, documents, output):
+    """Evaluates a set of motifs on a set of documents.
+
+    Parameters
+    ----------
+    motifs : str
+        Filepath for the JSONL file storing the motifs-to-be-evaluated.
+
+    documents : str
+        Filepath for the JSONL file storing the filepaths for the documents-to-be-evaluted.
+
+    output : str
+        Filepath for the resulting `SparseImage` object to be written to.
+
+    See Also
+    --------
+    `image.evaluate_motifs` - the core functionality for this command-line process.
+
+    """
     # generate the image and load the motifs
     image = img.SparseImage()
     with open(motifs, "r") as f:
@@ -109,9 +128,16 @@ def evaluate(motifs, data):
         motifs = [Motif.of_string(line) for line in f.readlines()]
         logger.info(f"Motifs loaded. Found {len(motifs)} motifs.")
     image.register_motifs(*motifs)
+    # load the document list
+    with open(documents, "r") as f:
+        logger.info(f"Loading documents list from {documents}...")
+        docs = [json.loads(line)["filename"] for line in f.readlines()]
+        logger.info(f"Documents list loaded. Found {len(docs)} documents.")
     # evaluate
-    image.evaluate_motifs(data)
-    image.dump("test.jsonl")
+    for doc in docs:
+        image.evaluate_motifs(doc)
+    # and write the results
+    image.dump(output)
 
 @run.command()
 @click.argument("image", type=str, required=True)

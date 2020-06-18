@@ -19,7 +19,9 @@ mote/enumerate mote/evaluate: mote mote/bin/enumerate.ml mote/bin/evaluate.ml
 # making documents from text
 .PRECIOUS: data/documents/%.db
 data/documents/%.db: data/text/%.txt env
-	$(PYTHON) motel process $< $@
+	$(PYTHON) motel process\
+		--input $<\
+		--output $@
 
 # EXPERIMENTS
 include experiments/experiments.mk
