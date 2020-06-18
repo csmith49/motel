@@ -1,3 +1,5 @@
+"""Command-line interface for Motel."""
+
 import orm
 import click
 import log
@@ -9,26 +11,43 @@ import analysis
 
 logger = log.get("cli")
 
-# utility for connecting to a database
-# def connect(db_path):
-#     logger.info(f"Initiating connection to {db_path}...")
-#     orm.db.bind(provider='sqlite', filename=path.abspath(db_path), create_db=True)
-#     orm.db.generate_mapping(create_tables=True)
-#     logger.info(f"Connection to {db_path} established.")
-
 # entry point for the cli
 @click.group()
-def run(): pass
+def run():
+    """Entry point for the CLI."""
+    pass
 
 # make a database from a single document
 @run.command()
 def test():
+    """Test command.
+
+    Notes
+    -----
+    Only intended to ensure all modules (sans `nlp`) are imported correctly.
+
+    When run, prints "Motel requirements installed and loaded successfully." to standard output.
+    """
     print("Motel requirements installed and loaded successfully.")
 
 @run.command()
 @click.argument("input", type=str, required=True)
 @click.argument("output", type=str, default=":memory:")
 def process(input, output):
+    """Convert a text file to a document.
+
+    Parameters
+    ----------
+    input : str
+        Filepath for the input text file.
+    
+    output : str, optional
+        Filepath for the output document database. If none provided, defaults to an in-memory database.
+
+    See Also
+    --------
+    `nlp.process` - the core functionality of this command-line procedure.
+    """
     import nlp
     # connect to the output db (defaults to in-memory)
     with orm.Connection(output):
@@ -43,6 +62,20 @@ def process(input, output):
 @click.argument("input", type=str, required=True)
 @click.argument("output", type=str, required=True)
 def extract_neighborhoods(input, output):
+    """Generates neighborhoods around labeled points in a document.
+
+    Parameters
+    ----------
+    input : str
+        Filepath for the input document database.
+
+    output : str
+        Filepath for the output JSONL file.
+
+    See Also
+    --------
+    `orm.neighborhood` - the critical functionality of this command-line process.
+    """
     # connect to the doc
     with orm.Connection(input):
         # find all nodes with "user:label" and return the node/label pair to stdout
