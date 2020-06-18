@@ -13,6 +13,12 @@ EDGE_WEIGHTS = {
 }
 EDGE_WEIGHT_DEFAULT = 1
 
+# controlling ensemble learning
+CLASSIFICATION_THRESHOLD=0.01
+ACCURACY_THRESHOLD=0.7
+LEARNING_RATE=4
+CLASS_RATIO=0.1
+
 # controlling log behavior
 LOG_CONFIG = {
     # overall config

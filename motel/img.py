@@ -50,6 +50,9 @@ class Point:
             "file" : self.filepath,
             "identifier" : self.identifier
         }
+
+    def __eq__(self, other):
+        return (self.filepath == other.filepath) and (self.identifier == other.identifier)
     
     @classmethod
     def of_json(cls, json_representation):
@@ -76,11 +79,14 @@ class SparseImage:
 
     Attributes
     ----------
-    motifs : Motif list
+    motifs : motifs.Motif list
         A set of `Motif` objects.
 
-    rows : Motif -> Point list
+    rows : motifs.Motif -> Point list
         A dictionary mapping `Motif` objects to an image - a list of `Point` objects.
+
+    domain : Point list
+        A list of all points selected by motifs in the image.
     """
     def __init__(self):
         self.motifs = []
@@ -92,7 +98,7 @@ class SparseImage:
 
         Parameters
         ----------
-        motif : Motif
+        motif : motif.Motif
             A `Motif` object to register in the sparse image.
 
         Notes
@@ -107,7 +113,7 @@ class SparseImage:
 
         Parameters
         ----------
-        *args : Motif list
+        *args : motif.Motif list
             A list of `Motif` objects to register in the sparse image.
 
         Notes
@@ -196,3 +202,29 @@ class SparseImage:
             image.rows[motif].append(points)
         logger.info(f"Image {image} loaded from {filepath}.")
         return image
+
+    def motif_domain(self, motif):
+        """Set of points a motif classifies.
+
+        Parameters
+        ----------
+        motif : motifs.Motif
+            `motif.Motif` object whose classification we care about.
+
+        Returns
+        -------
+        Point list
+            List of points classified by the provided motif.
+        
+        See Also
+        --------
+        `SparseImage.domain` - attribute providing the whole domain of an image.
+        """
+        return self.rows[motif]
+
+    @property
+    def domain()
+        result = set()
+        for motif in self.motifs:
+            result.update(self.motif_domain(motif))
+        return list(result)
