@@ -1,0 +1,3 @@
+[submodule "mote"]
+	path = mote
+	url = https://github.com/csmith49/mote.git

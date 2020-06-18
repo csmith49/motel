@@ -7,3 +7,6 @@ pony>=0.7.12,<1.0.0
 
 # for interface
 click>=7.0,<8.0
+
+# for ensembling
+pandas

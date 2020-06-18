@@ -1,3 +1,4 @@
+# virtual environment as a rule means python dependencies always up to date
 VENV=env
 VENV_ACTIVATE=$(VENV)/bin/activate
 PYTHON=$(VENV)/bin/python3
@@ -8,13 +9,30 @@ $(VENV)/bin/activate: requirements.txt
 	$(PYTHON) -m pip install -Ur requirements.txt
 	touch $(VENV)/bin/activate
 
-.PRECIOUS: documents/%.db
-documents/%.db: data/%.txt env
+# submodule rules
+mote: mote/README.md
+mote/README.md:
+	git submodule update --init --recursive
+mote/enumerate mote/evaluate: mote mote/bin/enumerate.ml mote/bin/evaluate.ml
+	$(MAKE) -C mote
+
+# making documents from text
+.PRECIOUS: data/documents/%.db
+data/documents/%.db: data/text/%.txt env
 	$(PYTHON) motel process $< $@
 
-.PRECIOUS: neighborhoods/%.jsonl
-neighborhoods/%.jsonl: documents/%.db env
-	$(PYTHON) motel extract-neighborhoods $< $@
+# EXPERIMENTS
+include experiments/experiments.mk
 
+#temp rule
+evaluate: env data/documents/lincoln-pob.db
+	$(PYTHON) motel evaluate experiments/lincoln-test/motifs.jsonl data/documents/lincoln-pob.db
+
+# test rule
+.PHONY: test
 test: env
 	$(PYTHON) motel test
+
+# temp test rule
+analyze: env
+	$(PYTHON) motel analyze-image abc def

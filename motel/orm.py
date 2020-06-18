@@ -1,4 +1,5 @@
 from pony.orm import *
+from os import path
 import log, settings
 
 logger = log.get("orm")
@@ -107,3 +108,19 @@ def neighborhood(origin, distance=1):
 def positive_vertices():
     for attr in Attribute.select(lambda a: a.kind == "user:label" and a.value == "positive"):
         yield attr.vertex
+
+# context manager for connecting to a database
+class Connection:
+    def __init__(self, filepath):
+        self._filepath = filepath
+    
+    def __enter__(self):
+        logger.info(f"Initiating connection to {self._filepath}...")
+        db.bind(provider='sqlite', filename=path.abspath(self._filepath), create_db=True)
+        db.generate_mapping(create_tables=True)
+        logger.info(f"Connection to {self._filepath} established.")
+
+    def __exit__(self, *args):
+        logger.info(f"Releasing connection to {self._filepath}...")
+        db.disconnect()
+        logger.info(f"Connection to {self._filepath} released.")
