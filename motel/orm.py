@@ -137,12 +137,23 @@ def positive_vertices():
     """All vertices labeled "positive" by the user.
 
     Yields
-    -------
+    ------
     Vertex
         A `Vertex` entity with the "positive" value for the "user:label" attribute.
     """
     for attr in Attribute.select(lambda a: a.kind == "user:label" and a.value == "positive"):
         yield attr.vertex
+
+def all_vertices():
+    """All vertices in the connected database.
+
+    Yields
+    ------
+    Vertex
+        A `Vertex` entity in the database.
+    """
+    for vertex in Vertex:
+        yield vertex
 
 # context manager for connecting to a database
 class Connection:

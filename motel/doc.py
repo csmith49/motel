@@ -1,8 +1,38 @@
 """Document-level information and statistics."""
 
 from img import Point
-from orm import Connection, positive_vertices
+from orm import Connection, positive_vertices, all_vertices, db_session
+from enum import Enum, auto
+from difflib import get_close_matches
 import json
+
+class Split(Enum):
+    """Enumeration for labeling documents with their role in a data set split."""
+    TRAIN = auto()
+    TEST = auto()
+    VALIDATE = auto()
+
+_SPLIT_OPTIONS = {
+    "train" : Split.TRAIN,
+    "test" : Split.TEST,
+    "validate" : Split.VALIDATE
+}
+
+def split_of_string(string):
+    """Converts string to closest split option using difflib.
+
+    Parameters
+    ----------
+    string : str
+        String to be converted.
+
+    Returns
+    -------
+    Split
+        Enum value represented by provided string.
+    """
+    option = get_close_matches(string, _SPLIT_OPTIONS.keys(), 1)[0]
+    return _SPLIT_OPTIONS[option]
 
 class Document:
     """A document database.
@@ -16,9 +46,21 @@ class Document:
     ----------
     filepath : str
         Filepath pointing to the document's database file.
+
+    splits : Split list
+        List of enum values specifying the split type of the document.
+
+    domain : img.Point list
+        List of all points in the document.
+
+    ground_truth : img.Point list
+        List of all points in the document labeled "positive" by the user.
     """
     def __init__(self, json_representation):
         self.filepath = json_representation["filename"]
+        self.splits = [split_of_string(split) for split in json_representation["split"]]
+        self._domain = None
+        self._ground_truth = None
 
     def connect(self):
         """Connect to the document.
@@ -53,6 +95,24 @@ class Document:
         """
         return Point(self.filepath, identifier)
 
+    @property
+    def domain(self):
+        # cached domain construction
+        if self._domain is None:
+            with self.connect():
+                with orm.db_session:
+                    self._domain = [self.point(vertex.id) for vertex in all_vertices()]
+        return self._domain
+
+    @property
+    def ground_truth(self):
+        # cached ground truth construction
+        if self._ground_truth is None:
+            with self.connect():
+                with orm.db_session:
+                    self._ground_truth = [self.point(vertex.id) for vertex in positive_vertices()]
+        return self._ground_truth
+
 class Dataset:
     """A set of documents.
 
@@ -65,13 +125,27 @@ class Dataset:
     ----------
     documents : Document list
         A list of all documents in the data set.
-
-    ground_truth : GroundTruth
-        The points labeled "positive" in the data set.
     """
     def __init__(self, documents):
         self.documents = documents
         self._ground_truth = None
+
+    def documents_by_split(self, split):
+        """Iterates over all documents matching the provided split type.
+
+        Parameters
+        ----------
+        split : Split
+            Split type to filter documents by.
+
+        Yields
+        ------
+        Document
+            Document object matching the provided split type.
+        """
+        for document in self.documents:
+            if split in document.splits:
+                yield document
 
     @classmethod
     def load(cls, filepath):
@@ -91,29 +165,46 @@ class Dataset:
             docs = [Document(json.loads(line)) for line in f.readlines()]
         return cls(docs)
 
-    @property
-    def ground_truth(self):
-        # cached construction
-        if not self._ground_truth:
-            points = []
-            for document in self.documents:
-                with document.connect():
-                    points += positive_vertices()
-            self._ground_truth = GroundTruth(points)
-        return self._ground_truth
+    def domain(self, split=None):
+        """All points in the documents in the data set.
 
-class GroundTruth:
-    """Ground truth annotations from a set of documents.
+        Parameters
+        ----------
+        split : Split, optional
+            If provided, will provide the points *only* in the documents matching the split type.
 
-    Parameters
-    ----------
-    points : img.Point list
-        A list of points in the ground truth.
+        Returns
+        -------
+        img.Point list
+            A list of points in the appropriate split.
+        """
+        if split is None:
+            documents = self.documents
+        else:
+            documents = self.documents_by_split(split)
+        output = set()
+        for document in documents:
+            output.extend(document.domain)
+        return output
 
-    Attributes
-    ----------
-    points : img.Point list
-        A list of points in the ground truth.
-    """
-    def __init__(self, points):
-        self.points = points
+    def ground_truth(self, split=None):
+        """All points in the documents in the data set labeled "positive" by the user.
+
+        Parameters
+        ----------
+        split : Split, optional
+            If provided, will provide the points *only* in the documents matching the split type.
+
+        Returns
+        -------
+        img.Point list
+            A list of all positive points in the appropriate split.
+        """
+        if split is None:
+            documents = self.documents
+        else:
+            documents = self.documents_by_split(split)
+        output = set()
+        for document in documents:
+            output.extend(document.ground_truth)
+        return output

@@ -223,7 +223,7 @@ class SparseImage:
         return self.rows[motif]
 
     @property
-    def domain()
+    def domain(self):
         result = set()
         for motif in self.motifs:
             result.update(self.motif_domain(motif))

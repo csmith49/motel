@@ -60,12 +60,12 @@ def process(input, output):
 @click.option("-i", "--input", type=str, required=True)
 @click.option("-o", "--output", type=str, required=True)
 def extract_neighborhoods(input, output):
-    """Generates neighborhoods around labeled points in a document.
+    """Generates neighborhoods around labeled points in a set of documents.
 
     Parameters
     ----------
     input : str
-        Filepath for the input document database.
+        Filepath for the input data set.
 
     output : str
         Filepath for the output JSONL file.
@@ -74,27 +74,29 @@ def extract_neighborhoods(input, output):
     --------
     `orm.neighborhood` - the critical functionality of this command-line process.
     """
-    # connect to the doc
-    with orm.Connection(input):
-        # find all nodes with "user:label" and return the node/label pair to stdout
-        logger.info(f"Looking for labels in {input}...")
-        with orm.db_session:
-            with open(output, "w") as f:
-                logger.info(f"Writing results to {output}...")
-                for vertex in orm.positive_vertices():
-                    logger.info(f"Found vertex {vertex.id} with positive label. Constructing neighborhood...")
-                    vertices, edges = orm.neighborhood(vertex, distance=2)
-                    json_rep = {
-                        "structure" : {
-                            "vertices" : [v.to_json(avoid=["user:label"]) for v in vertices],
-                            "edges" : [e.to_json() for e in edges]
-                        },
-                        "selector" : vertex.id
-                    }
-                    logger.info(f"Neighborhood for vertex {vertex.id} constructed.")
-                    f.write(json.dumps(json_rep))
-                    f.write("\n")
-                logger.info(f"Results written to {output}.")
+    # load the data set
+    dataset = doc.Dataset.load(input)
+    for document in dataset.documents_by_split(doc.Split.TRAIN):
+        with document.connect():
+            # find all nodes with "user:label" and return the node/label pair to stdout
+            logger.info(f"Looking for labels in {document.filepath}...")
+            with orm.db_session:
+                with open(output, "w") as f:
+                    logger.info(f"Writing results to {output}...")
+                    for vertex in orm.positive_vertices():
+                        logger.info(f"Found vertex {vertex.id} with positive label. Constructing neighborhood...")
+                        vertices, edges = orm.neighborhood(vertex, distance=2)
+                        json_rep = {
+                            "structure" : {
+                                "vertices" : [v.to_json(avoid=["user:label"]) for v in vertices],
+                                "edges" : [e.to_json() for e in edges]
+                            },
+                            "selector" : vertex.id
+                        }
+                        logger.info(f"Neighborhood for vertex {vertex.id} constructed.")
+                        f.write(json.dumps(json_rep))
+                        f.write("\n")
+                    logger.info(f"Results written to {output}.")
 
 @run.command()
 @click.option("-m", "--motifs", type=str, required=True)
