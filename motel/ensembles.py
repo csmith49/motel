@@ -29,7 +29,7 @@ class Ensemble:
         # keep the image around for a few things
         logger.info(f"Building ensemble from image {image}...")
         self._image = image
-        self._point_map = image.domain
+        self._point_map = list(image.domain)
         self._motif_map = image.motifs
         # construct inclusion matrix by building rows per-motif
         rows = []

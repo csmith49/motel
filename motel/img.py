@@ -84,15 +84,15 @@ class SparseImage:
     motifs : motifs.Motif list
         A set of `Motif` objects.
 
-    rows : motifs.Motif -> Point list
-        A dictionary mapping `Motif` objects to an image - a list of `Point` objects.
+    rows : motifs.Motif -> Point set
+        A dictionary mapping `Motif` objects to an image - a set of `Point` objects.
 
-    domain : Point list
-        A list of all points selected by motifs in the image.
+    domain : Point set
+        A set of all points selected by motifs in the image.
     """
     def __init__(self):
         self.motifs = []
-        self.rows = defaultdict(lambda: [])
+        self.rows = defaultdict(lambda: set())
         logger.info(f"Sparse image {self} created.")
 
     def register_motif(self, motif):
@@ -199,8 +199,8 @@ class SparseImage:
         for entry in entries:
             motif = motifs.Motif(entry["motif"])
             image.register_motif(motif)
-            points = [Point.of_json(json_rep) for json_rep in entry["image"]]
-            image.rows[motif] += points
+            points = (Point.of_json(json_rep) for json_rep in entry["image"])
+            image.rows[motif] = image.rows[motif].union( set(points) )
         logger.info(f"Image {image} loaded from {filepath}.")
         return image
 
@@ -225,7 +225,7 @@ class SparseImage:
 
     @property
     def domain(self):
-        results = []
+        results = set()
         for motif in self.motifs:
-            results += self.motif_domain(motif)
+            results = results.union( self.motif_domain(motif) )
         return results

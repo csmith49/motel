@@ -50,11 +50,11 @@ class Document:
     splits : Split list
         List of enum values specifying the split type of the document.
 
-    domain : img.Point list
-        List of all points in the document.
+    domain : img.Point set
+        Set of all points in the document.
 
-    ground_truth : img.Point list
-        List of all points in the document labeled "positive" by the user.
+    ground_truth : img.Point set
+        Set of all points in the document labeled "positive" by the user.
     """
     def __init__(self, json_representation):
         self.filepath = json_representation["filename"]
@@ -101,7 +101,7 @@ class Document:
         if self._domain is None:
             with self.connect():
                 with db_session:
-                    self._domain = [self.point(vertex.id) for vertex in all_vertices()]
+                    self._domain = set( (self.point(vertex.id) for vertex in all_vertices()) )
         return self._domain
 
     @property
@@ -110,7 +110,7 @@ class Document:
         if self._ground_truth is None:
             with self.connect():
                 with db_session:
-                    self._ground_truth = [self.point(vertex.id) for vertex in positive_vertices()]
+                    self._ground_truth = set( (self.point(vertex.id) for vertex in positive_vertices()) )
         return self._ground_truth
 
 class Dataset:
@@ -182,9 +182,9 @@ class Dataset:
             documents = self.documents
         else:
             documents = self.documents_by_split(split)
-        output = []
+        output = set()
         for document in documents:
-            output += document.domain
+            output = output.union( document.domain )
         return output
 
     def ground_truth(self, split=None):
@@ -204,9 +204,9 @@ class Dataset:
             documents = self.documents
         else:
             documents = self.documents_by_split(split)
-        output = []
+        output = set()
         for document in documents:
-            output += document.ground_truth
+            output = output.union( document.ground_truth )
         return output
 
     def filter_points(self, points, split):
