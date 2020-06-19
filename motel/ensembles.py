@@ -286,6 +286,9 @@ class Disjunction(Ensemble):
         # overriding, as we would like to only use "relevant" motifs
         return np.sum(self._relevant_motifs())
 
+    def __str__(self):
+        return "<disjunction>"
+
 class MajorityVote(Disjunction):
     """Ensembles computing classifications by taking a majority vote over motifs in the ensemble.
 
@@ -325,6 +328,9 @@ class MajorityVote(Disjunction):
         relevant = self._relevant_motifs()
         counts_for = self._inclusion @ np.transpose(relevant)
         return counts_for / self.size
+
+    def __str__(self):
+        return "<majority-vote>"
 
 
 class WeightedVote(Ensemble):
@@ -415,3 +421,6 @@ class WeightedVote(Ensemble):
         minus = np.exp(s_minus / denom)
 
         return plus / plus + minus
+
+    def __str__(self):
+        return "<weighted-vote>"

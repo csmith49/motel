@@ -4,6 +4,7 @@
 import orm, log, motifs
 import json
 from collections import defaultdict
+from os import path
 
 logger = log.get("img")
 
@@ -31,7 +32,8 @@ class Point:
         self.identifier = identifier
     
     def __str__(self):
-        return f"{self.identifier}"
+        file_base = path.splitext(path.basename(self.filepath))[0]
+        return f"<{file_base}:{self.identifier}>"
 
     def to_json(self):
         """Converts point object to simple JSON representation.
@@ -94,6 +96,9 @@ class SparseImage:
         self.motifs = []
         self.rows = defaultdict(lambda: set())
         logger.info(f"Sparse image {self} created.")
+
+    def __str__(self):
+        return "<sparse-image>"
 
     def register_motif(self, motif):
         """Registers a motif in the sparse image.

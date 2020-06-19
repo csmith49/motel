@@ -5,6 +5,7 @@ from orm import Connection, positive_vertices, all_vertices, db_session
 from enum import Enum, auto
 from difflib import get_close_matches
 import json
+from os import path
 
 class Split(Enum):
     """Enumeration for labeling documents with their role in a data set split."""
@@ -61,6 +62,10 @@ class Document:
         self.splits = [split_of_string(split) for split in json_representation["split"]]
         self._domain = None
         self._ground_truth = None
+
+    def __str__(self):
+        file_base = path.splitext(path.basename(self.filepath))[0]
+        return f"<doc:{file_base}>"
 
     def connect(self):
         """Connect to the document.
