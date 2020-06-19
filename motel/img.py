@@ -1,8 +1,7 @@
 """Defines sparse images - the result of evaluating motifs on documents.
 """
 
-import orm
-import log
+import orm, log, motifs
 import json
 from collections import defaultdict
 
@@ -73,6 +72,9 @@ class Point:
         Functional inverse of `to_json` - that is, `p = Point.of_json(p.to_json())`.
         """
         return cls(json_representation["file"], json_representation["identifier"])
+
+    def __hash__(self):
+        return hash( (self.filepath, self.identifier) )
 
 class SparseImage:
     """The image of a set of motifs on a set of documents.
@@ -196,10 +198,10 @@ class SparseImage:
         with open(filepath, "r") as f:
             entries = [json.loads(line) for line in f.readlines()]
         for entry in entries:
-            motif = entry["motif"]
+            motif = motifs.Motif(entry["motif"])
             image.register_motif(motif)
             points = [Point.of_json(json_rep) for json_rep in entry["image"]]
-            image.rows[motif].append(points)
+            image.rows[motif] += points
         logger.info(f"Image {image} loaded from {filepath}.")
         return image
 
@@ -224,7 +226,7 @@ class SparseImage:
 
     @property
     def domain(self):
-        result = set()
+        results = []
         for motif in self.motifs:
-            result.update(self.motif_domain(motif))
-        return list(result)
+            results += self.motif_domain(motif)
+        return results

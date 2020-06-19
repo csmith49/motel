@@ -24,12 +24,12 @@ def statistics(prediction, ground_truth, beta=1):
     true_positives = ground_truth & prediction
     false_positives = prediction - ground_truth
 
-    if len(selected) == 0: # to avoid division-by-zero errors
+    if len(prediction) == 0: # to avoid division-by-zero errors
         precision = 0.0
     else:
         precision = len(true_positives) / (len(true_positives) + len(false_positives))
     
-    recall = len(true_positives) / len(relevant)
+    recall = len(true_positives) / len(ground_truth)
     
     if precision == 0.0 and recall == 0.0: # to avoid division-by-zero errors
         f_beta = 0.0

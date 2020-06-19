@@ -1,11 +1,10 @@
 """Command-line interface for Motel."""
 
-import orm, log, img, doc
+import orm, log, img, doc, ensembles, stats
 import click
 from motifs import Motif
 from os import path
 import json
-import analysis
 
 logger = log.get("cli")
 
@@ -137,6 +136,22 @@ def evaluate(motifs, documents, output):
         image.evaluate_motifs(document)
     # and write the results
     image.dump(output)
+
+@run.command()
+@click.option("-i", "--image", type=str, required=True)
+@click.option("-d", "--documents", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
+def evaluate_disjunction(image, documents, output):
+    image = img.SparseImage.load(image)
+    dataset = doc.Dataset.load(documents)
+
+    ensemble = ensembles.Disjunction(image)
+    predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
+    ground_truth = set(dataset.ground_truth(split=doc.Split.TEST))
+
+    precision, recall, f_beta = stats.statistics(predicted, ground_truth)
+
+    print(precision, recall)
 
 @run.command()
 @click.option("-i", "--image", type=str, required=True)

@@ -53,7 +53,7 @@ class Ensemble:
 
         Functional inverse of `_to_points`.
         """
-        row [1 if point in points else 0 for point in self._point_map]
+        row = [1 if point in points else 0 for point in self._point_map]
         return np.array(row)
 
     def _to_points(self, row):
@@ -76,9 +76,9 @@ class Ensemble:
         Functional inverse of `_to_row`.
         """
         result = []
-        for v, w in zip(self._point_map, np.nditer(row, order='C')):
-            if w:
-                result.append(v)
+        for point, value in zip(self._point_map, np.nditer(row, order='C')):
+            if value:
+                result.append(point)
         return result
 
     @property
@@ -159,7 +159,7 @@ class Ensemble:
         """
         if threshold is None:
             threshold = settings.CLASSIFICATION_THRESHOLD
-        return self.to_values(self.probabilities() >= threshold)
+        return self._to_points(self.probabilities() >= threshold)
 
     def probabilities(self):
         """Provides classification probabilities for points in the ensemble's domain. Intended to be overwritten.

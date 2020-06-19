@@ -100,7 +100,7 @@ class Document:
         # cached domain construction
         if self._domain is None:
             with self.connect():
-                with orm.db_session:
+                with db_session:
                     self._domain = [self.point(vertex.id) for vertex in all_vertices()]
         return self._domain
 
@@ -109,7 +109,7 @@ class Document:
         # cached ground truth construction
         if self._ground_truth is None:
             with self.connect():
-                with orm.db_session:
+                with db_session:
                     self._ground_truth = [self.point(vertex.id) for vertex in positive_vertices()]
         return self._ground_truth
 
@@ -182,9 +182,9 @@ class Dataset:
             documents = self.documents
         else:
             documents = self.documents_by_split(split)
-        output = set()
+        output = []
         for document in documents:
-            output.extend(document.domain)
+            output += document.domain
         return output
 
     def ground_truth(self, split=None):
@@ -204,7 +204,32 @@ class Dataset:
             documents = self.documents
         else:
             documents = self.documents_by_split(split)
-        output = set()
+        output = []
         for document in documents:
-            output.extend(document.ground_truth)
+            output += document.ground_truth
         return output
+
+    def filter_points(self, points, split):
+        """Removes points that don't come from a document from the right split.
+
+        Parameters
+        ----------
+        points : img.Point list
+            A list of points to be filtered.
+        
+        split : Split
+            The split to filter by.
+
+        Yield
+        -------
+        img.Point
+            A point from the provided split.
+        """
+
+        split_map = {document.filepath : document.splits for document in self.documents}
+
+        for point in points:
+            point_splits = split_map[point.filepath]
+            if split in split_map[point.filepath]:
+                yield point
+        
