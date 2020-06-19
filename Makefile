@@ -23,18 +23,10 @@ data/documents/%.db: data/text/%.txt env
 		--input $<\
 		--output $@
 
-# EXPERIMENTS
+# experiments
 include experiments/experiments.mk
-
-#temp rule
-evaluate: env data/documents/lincoln-pob.db
-	$(PYTHON) motel evaluate experiments/lincoln-test/motifs.jsonl data/documents/lincoln-pob.db
 
 # test rule
 .PHONY: test
 test: env
 	$(PYTHON) motel test
-
-# temp test rule
-analyze: env
-	$(PYTHON) motel analyze-image abc def

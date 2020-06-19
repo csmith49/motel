@@ -1,7 +1,9 @@
 """Ensembles of motifs"""
 
 import numpy as np
-import settings
+import settings, log
+
+logger = log.get("ensembles")
 
 class Ensemble:
     """Ensemble base class.
@@ -25,6 +27,7 @@ class Ensemble:
 
     def __init__(self, image):
         # keep the image around for a few things
+        logger.info(f"Building ensemble from image {image}...")
         self._image = image
         self._point_map = image.domain
         self._motif_map = image.motifs
@@ -33,6 +36,7 @@ class Ensemble:
         for motif in self._motif_map:
             rows.append(self._to_row(image.motif_domain(motif)))
         self._inclusion = np.transpose(np.array(rows))
+        logger.info(f"Ensemble {self} built with {len(self._motif_map)} motifs and {len(self._point_map)} points.")
 
     def _to_row(self, points):
         """Converts a list of points to a row in the ensemble's inclusion matrix.
@@ -383,7 +387,7 @@ class WeightedVote(Ensemble):
         if learning_rate is None:
             learning_rate = settings.LEARNING_RATE
         # multiplicative updates to alpha
-        v_i = self._point_map.index(value)
+        v_i = self._point_map.index(point)
         if classification:
             m_i = self._inclusion[v_i,] * -1 * scale
         else:
@@ -403,7 +407,11 @@ class WeightedVote(Ensemble):
         """
         w_i = self._w_c - 2 * self._fpr
 
-        s_plus = np.exp(self._inclusion @ np.transpose(w_i))
-        s_minus = np.exp((1 - self._inclusion) @ np.transpose(w_i))
+        s_plus = self._inclusion @ np.transpose(w_i)
+        s_minus = (1 - self._inclusion) @ np.transpose(w_i)
+        denom = max(np.max(s_plus), np.max(s_minus))
 
-        return s_plus / s_plus + s_minus
+        plus = np.exp(s_plus / denom)
+        minus = np.exp(s_minus / denom)
+
+        return plus / plus + minus

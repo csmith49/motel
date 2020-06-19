@@ -101,7 +101,7 @@ def extract_neighborhoods(input, output):
 @click.option("-m", "--motifs", type=str, required=True)
 @click.option("-d", "--documents", type=str, required=True)
 @click.option("-o", "--output", type=str, required=True)
-def evaluate(motifs, documents, output):
+def evaluate_motifs(motifs, documents, output):
     """Evaluates a set of motifs on a set of documents.
 
     Parameters
@@ -142,16 +142,90 @@ def evaluate(motifs, documents, output):
 @click.option("-d", "--documents", type=str, required=True)
 @click.option("-o", "--output", type=str, required=True)
 def evaluate_disjunction(image, documents, output):
+    # load the data
+    logger.info(f"Evaluating disjunction ensemble on {image} and {documents}...")
+    logger.info("Loading assets...")
     image = img.SparseImage.load(image)
     dataset = doc.Dataset.load(documents)
-
-    ensemble = ensembles.Disjunction(image)
-    predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
     ground_truth = set(dataset.ground_truth(split=doc.Split.TEST))
-
+    logger.info(f"Assets loaded. {len(image.motifs)} motifs and {len(dataset.documents)} documents loaded.")
+    # build the ensemble
+    ensemble = ensembles.Disjunction(image)
+    # evaluate once
+    logger.info(f"Evaluating ensemble {ensemble}...")
+    predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
     precision, recall, f_beta = stats.statistics(predicted, ground_truth)
+    logger.info(f"Ensemble {ensemble} evaluated.")
+    logger.info(f"Ensemble {ensemble} performance (P / R): {precision} / {recall}")
 
-    print(precision, recall)
+@run.command()
+@click.option("-i", "--image", type=str, required=True)
+@click.option("-d", "--documents", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
+@click.option("-t", "--thresholds", type=int, default=5)
+def evaluate_majority_vote(image, documents, output, thresholds):
+    # load the data
+    logger.info(f"Evaluating disjunction ensemble on {image} and {documents}...")
+    logger.info("Loading assets...")
+    image = img.SparseImage.load(image)
+    dataset = doc.Dataset.load(documents)
+    ground_truth = set(dataset.ground_truth(split=doc.Split.TEST))
+    logger.info(f"Assets loaded. {len(image.motifs)} motifs and {len(dataset.documents)} documents loaded.")
+    # build the ensemble
+    ensemble = ensembles.MajorityVote(image)
+    # start evaluation
+    logger.info(f"Evaluating ensemble {ensemble}...")
+    for threshold in [i / thresholds for i in range(0, thresholds)]:
+        # compute stats
+        logger.info(f"Evaluating ensemble {ensemble} with threshold {threshold}...")
+        predicted = set(dataset.filter_points(ensemble.classified(threshold=threshold), doc.Split.TEST))
+        precision, recall, f_beta = stats.statistics(predicted, ground_truth)
+        logger.info(f"Ensemble {ensemble} with threshold {threshold} evaluated.")
+        logger.info(f"Ensemble {ensemble} performance (P / R): {precision} / {recall}")
+
+@run.command()
+@click.option("-i", "--image", type=str, required=True)
+@click.option("-d", "--documents", type=str, required=True)
+@click.option("-o", "--output", type=str, required=True)
+@click.option("-a", "--active-learning-steps", type=int, default=1)
+def evaluate_weighted_vote(image, documents, output, active_learning_steps):
+    # load the data
+    logger.info(f"Evaluating disjunction ensemble on {image} and {documents}...")
+    logger.info("Loading assets...")
+    image = img.SparseImage.load(image)
+    dataset = doc.Dataset.load(documents)
+    ground_truth = set(dataset.ground_truth(split=doc.Split.TEST))
+    logger.info(f"Assets loaded. {len(image.motifs)} motifs and {len(dataset.documents)} documents loaded.")
+    # build the ensemble
+    ensemble = ensembles.WeightedVote(image)
+    # build active learning data
+    learnable = set(dataset.filter_points(image.domain, split=doc.Split.TEST))
+    learned = set()
+    # start evaluation
+    logger.info(f"Evaluating ensemble {ensemble}...")
+    for step in range(active_learning_steps):
+        # compute stats
+        logger.info(f"Evaluating ensemble {ensemble} on active-learning step {step}...")
+        predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
+        precision, recall, f_beta = stats.statistics(predicted, ground_truth)
+        logger.info(f"Ensemble {ensemble} on active-learning step {step} evaluated.")
+        logger.info(f"Ensemble {ensemble} performance (P / R): {precision} / {recall}")
+        # see if we can split
+        if step != (active_learning_steps - 1):
+            logger.info(f"Looking for a split for ensemble {ensemble}...")
+            split = stats.min_absolute_logit(ensemble, learnable - learned)
+            if split is not None:
+                learnable.remove(split)
+                learned.add(split)
+                truth = (split in ground_truth)
+                logger.info(f"Split {split} found with ground truth {truth}.")
+                # update the ensemble
+                logger.info(f"Updating ensemble {ensemble}...")
+                ensemble.update(split, truth, learning_rate=None, decay=1, step=step, scale=1)
+                logger.info(f"Ensemble {ensemble} updated.")
+            else:
+                logger.info(f"No viable split found for ensemble {ensemble}.")
+                
 
 @run.command()
 @click.option("-i", "--image", type=str, required=True)

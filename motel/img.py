@@ -108,7 +108,6 @@ class SparseImage:
         Modifies the `SparseImage` object in place.
         """
         self.motifs.append(motif)
-        logger.info(f"Motif {motif} registered in image {self}.")
     
     def register_motifs(self, *args):
         """Registers multiple motifs in the sparse image.
