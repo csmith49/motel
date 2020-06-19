@@ -175,6 +175,16 @@ class Ensemble:
         """
         raise NotImplementedError
 
+    def probabilities_per_point(self):
+        """Provide classification probabilities for every point in the domain as a list of pairs.
+
+        Returns
+        -------
+        (img.Point, float) list
+            A list of points in the ensemble domain paired-up with their positive classification probabilities.
+        """
+        return zip(self._point_map, self.probabilities())
+
 class Disjunction(Ensemble):
     """Ensemble computing classification via a "disjunction" of individual motif classifications.
 
