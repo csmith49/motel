@@ -152,7 +152,7 @@ def evaluate(image, documents, output, thresholds, active_learning_steps):
     logger.info("Loading assets...")
     image = img.SparseImage.load(image)
     dataset = doc.Dataset.load(documents)
-    logger.info(f"Assets ({len(image.motifs)} motifs and {len(dataset.documents)}) loaded.")
+    logger.info(f"Assets ({len(image.motifs)} motifs and {len(dataset.documents)} documents) loaded.")
     logger.info("Beginning evaluation...")
     results = []
     # step 1 - disjunction

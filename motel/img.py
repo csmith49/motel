@@ -147,12 +147,12 @@ class SparseImage:
 
         `evaluate_motifs` is *not* idempotent - evaluating the same document multiple times will duplicate the image.
         """
-        with document.connect():
+        with document.connect() as db:
             for motif in self.motifs:
                 logger.info(f"Evaluating motif {motif} on {document}...")
                 # do the evaluation
-                values = [document.point(id) for id in motif.evaluate()]
-                self.rows[motif] += values
+                values = set([document.point(id) for id in motif.evaluate(db)])
+                self.rows[motif] |= values
                 logger.info(f"Motif {motif} finished evaluating on {document}. Selected {len(values)} vertices.")
 
     def dump(self, filepath):

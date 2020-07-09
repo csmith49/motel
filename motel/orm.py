@@ -174,14 +174,16 @@ class Connection:
     """
     def __init__(self, filepath):
         self._filepath = filepath
+        self._db = Database()
     
     def __enter__(self):
         logger.info(f"Initiating connection to {self._filepath}...")
-        db.bind(provider='sqlite', filename=path.abspath(self._filepath), create_db=True)
-        db.generate_mapping(create_tables=True)
+        self._db.bind(provider='sqlite', filename=path.abspath(self._filepath), create_db=True)
+        self._db.generate_mapping(create_tables=True)
         logger.info(f"Connection to {self._filepath} established.")
+        return self._db
 
     def __exit__(self, *args):
         logger.info(f"Releasing connection to {self._filepath}...")
-        db.disconnect()
+        self._db.disconnect()
         logger.info(f"Connection to {self._filepath} released.")

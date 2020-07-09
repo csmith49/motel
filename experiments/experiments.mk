@@ -7,7 +7,7 @@ experiments: $(EXP_RESULTS)
 
 # General Step 1: extract neighborhoods from training documents
 .PRECIOUS: experiments/%/neighborhoods.jsonl
-experiments/%/neighborhoods.jsonl: env data experiments/%/documents.jsonl
+experiments/%/neighborhoods.jsonl: env experiments/%/documents.jsonl
 	@echo "Extracting neighborhoods for $*..."
 	@$(PYTHON) motel --quiet extract-neighborhoods\
 		--input experiments/$*/documents.jsonl\
@@ -25,9 +25,9 @@ experiments/%/motifs.jsonl: mote/enumerate experiments/%/neighborhoods.jsonl
 
 # General Step 3: evaluate the motifs on the test set
 .PRECIOUS: experiments/%/image.jsonl
-experiments/%/image.jsonl: env data experiments/%/documents.jsonl experiments/%/motifs.jsonl
+experiments/%/image.jsonl: env experiments/%/documents.jsonl experiments/%/motifs.jsonl
 	@echo "Evaluating motifs for $*..."
-	@$(PYTHON) motel --quiet evaluate-motifs\
+	@$(PYTHON) motel evaluate-motifs\
 		--motifs experiments/$*/motifs.jsonl\
 		--documents experiments/$*/documents.jsonl\
 		--output experiments/$*/image.jsonl
@@ -41,4 +41,4 @@ experiments/%/performance.csv: env experiments/%/image.jsonl experiments/%/docum
 		--documents experiments/$*/documents.jsonl\
 		--output experiments/$*/performance.csv\
 		--thresholds 5\
-		--al-steps 10
+		--active-learning-steps 10

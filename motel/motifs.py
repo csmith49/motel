@@ -293,8 +293,13 @@ class Motif:
             }
         }
 
-    def evaluate(self):
+    def evaluate(self, db):
         """Evaluates the motif in the currently-connected document.
+
+        Paramters
+        ---------
+        Database
+            A PonyORM database object currently bound.
 
         Returns
         -------
@@ -305,4 +310,4 @@ class Motif:
         `query` - `evaluate` constructs and evaluates the SQL query represented by the `query` attribute.
         """
         with orm.db_session:
-            return orm.db.select(self.query)
+            return db.select(self.query)
