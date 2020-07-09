@@ -120,7 +120,7 @@ def result_row(predicted, ground_truth, ensemble=None, step=0, threshold=0):
         "al-step" : step,
         "precision" : precision,
         "recall" : recall,
-        "f_beta" : f_beta,
+        "f-beta" : f_beta,
         "threshold" : threshold
     }
 
@@ -151,7 +151,7 @@ def evaluate_majority_vote(image, dataset, thresholds=10):
         # compute stats
         logger.info(f"Evaluating ensemble {ensemble} with threshold {threshold}...")
         predicted = set(dataset.filter_points(ensemble.classified(threshold=threshold), doc.Split.TEST))
-        stats = result_row(predicted, ground_truth, ensemble="weighted-majority", threshold=threshold)
+        stats = result_row(predicted, ground_truth, ensemble="majority-vote", threshold=threshold)
         logger.info(f"Ensemble {ensemble} with threshold {threshold} evaluated.")
         logger.info(f"Ensemble {ensemble} performance (P / R): {stats['precision']} / {stats['recall']}")
         results.append(stats)
@@ -173,7 +173,7 @@ def evaluate_weighted_vote(image, dataset, active_learning_steps=10):
         # compute stats
         logger.info(f"Evaluating ensemble {ensemble} on active-learning step {step}...")
         predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
-        stats = result_row(predicted, ground_truth, ensemble="weighted-majority", threshold=threshold)
+        stats = result_row(predicted, ground_truth, ensemble="weighted-vote", step=step)
         logger.info(f"Ensemble {ensemble} on active-learning step {step} evaluated.")
         logger.info(f"Ensemble {ensemble} performance (P / R): {stats['precision']} / {stats['recall']}")
         results.append(stats)

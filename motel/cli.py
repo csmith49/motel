@@ -79,15 +79,15 @@ def extract_neighborhoods(input, output):
     # load the data set
     dataset = doc.Dataset.load(input)
     for document in dataset.documents_by_split(doc.Split.TRAIN):
-        with document.connect():
+        with document.connect() as mapping:
             # find all nodes with "user:label" and return the node/label pair to stdout
             logger.info(f"Looking for labels in {document.filepath}...")
             with orm.db_session:
                 with open(output, "w") as f:
                     logger.info(f"Writing results to {output}...")
-                    for vertex in orm.positive_vertices():
+                    for vertex in mapping.positive_vertices():
                         logger.info(f"Found vertex {vertex.id} with positive label. Constructing neighborhood...")
-                        vertices, edges = orm.neighborhood(vertex, distance=2)
+                        vertices, edges = mapping.neighborhood(vertex, distance=2)
                         json_rep = {
                             "structure" : {
                                 "vertices" : [v.to_json(avoid=["user:label"]) for v in vertices],

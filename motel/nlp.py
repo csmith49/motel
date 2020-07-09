@@ -78,11 +78,11 @@ def process_token(token):
     return value, properties
 
 # convert a sentence
-def process_sentence(sentence, label, orm):
+def process_sentence(sentence, label, mapping):
     logger.info(f"Processing sentence: {sentence.text}")
 
     # construct node representing the sentence
-    sentence_id = orm.Vertex.make()
+    sentence_id = mapping.Vertex.make()
 
     # convert label to a spacy doc so we can compute cosine similarity
     labeled_token = None
@@ -109,12 +109,12 @@ def process_sentence(sentence, label, orm):
                 properties["user:label"] = "positive"
             # generate the vertex
             logger.info(f"Found token: \"{value}\" with properties: {properties}")
-            vertex_id = orm.Vertex.make(text=value, **properties)
+            vertex_id = mapping.Vertex.make(text=value, **properties)
             # register the id so we can make some edges
             token._.id = vertex_id
             tokens.append(vertex_id)
             # and make the containment edge
-            orm.Edge.make(sentence_id, "motel:contains", vertex_id)
+            mapping.Edge.make(sentence_id, "motel:contains", vertex_id)
         else: pass
 
     # build up the dependency tree with another pass
@@ -125,17 +125,17 @@ def process_sentence(sentence, label, orm):
             else:
                 label = "spacy:dependency"
             logger.info(f"Found important dependency: {token._.id} - {label} - {token.head._.id}")
-            edge_id = orm.Edge.make(token._.id, label, token.head._.id)
+            edge_id = mapping.Edge.make(token._.id, label, token.head._.id)
 
     # and then build up the edges between important tokens
     for token1, token2 in pairwise(tokens):
-        orm.Edge.make(token1, "motel:next", token2)
+        mapping.Edge.make(token1, "motel:next", token2)
 
     # give back the sentence id for the higher-level process to handle
     return sentence_id
 
 # simple test
-def process(str, orm):
+def process(str, mapping):
     # get the labels in the text
     labels = text_labels(str)
     
@@ -145,9 +145,9 @@ def process(str, orm):
     # process each sentence
     sentences = []
     for sentence, label in zip(doc.sents, labels):
-        sentence_id = process_sentence(sentence, label, orm)
+        sentence_id = process_sentence(sentence, label, mapping)
         sentences.append(sentence_id)
 
     # chain the sentences together
     for sentence1, sentence2 in pairwise(sentences):
-        orm.Edge.make(sentence1, "motel:next", sentence2)
+        mapping.Edge.make(sentence1, "motel:next", sentence2)

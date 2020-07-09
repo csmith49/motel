@@ -13,7 +13,7 @@ $(VENV)/bin/activate: requirements.txt
 mote: mote/README.md
 mote/README.md:
 	git submodule update --init --recursive
-mote/enumerate mote/evaluate: mote mote/bin/enumerate.ml mote/bin/evaluate.ml
+mote/enumerate: mote mote/bin/enumerate.ml
 	$(MAKE) -C mote
 
 # making documents from text

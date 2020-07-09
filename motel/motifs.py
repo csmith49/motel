@@ -86,8 +86,10 @@ class Filter:
 
     @property
     def where_clause(self):
-        result = "TRUE"
-        for predicate in self.predicates:
+        # at this point, self.predicates cannot be empty - we are safe avoiding a base case
+        initial, *rest = self.predicates
+        result = f"id in ({initial.subquery})"
+        for predicate in rest:
             result = f"id in ({predicate.subquery}) AND {result}"
         return result
 
@@ -293,7 +295,7 @@ class Motif:
             }
         }
 
-    def evaluate(self, db):
+    def evaluate(self, mapping):
         """Evaluates the motif in the currently-connected document.
 
         Paramters
@@ -310,4 +312,4 @@ class Motif:
         `query` - `evaluate` constructs and evaluates the SQL query represented by the `query` attribute.
         """
         with orm.db_session:
-            return db.select(self.query)
+            return mapping.db.select(self.query)
