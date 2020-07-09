@@ -50,12 +50,12 @@ def process(input, output):
     """
     import nlp
     # connect to the output db (defaults to in-memory)
-    with orm.Connection(output):
+    with orm.Connection(output) as mapping:
     # read the provided doc and process all the lines
         logger.info(f"Processing file {input}...")
         with open(input, "r") as f:
             text = f.read()
-            nlp.process(text)
+            nlp.process(text, mapping)
         logger.info(f"Processing of file {input} complete.")
 
 @run.command()

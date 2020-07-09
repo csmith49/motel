@@ -1,5 +1,5 @@
 # experiments sub-makefile
-EXP_FOLDERS=$(shell find experiments -type d -mindepth 1)
+EXP_FOLDERS=$(shell find experiments -mindepth 1 -type d)
 EXP_RESULTS=$(EXP_FOLDERS:%=%/performance.csv)
 
 .PHONY: experiments

@@ -1,7 +1,7 @@
 """Document-level information and statistics."""
 
 from img import Point
-from orm import Connection, positive_vertices, all_vertices, db_session
+from orm import Connection, db_session
 from enum import Enum, auto
 from difflib import get_close_matches
 import json
@@ -104,18 +104,18 @@ class Document:
     def domain(self):
         # cached domain construction
         if self._domain is None:
-            with self.connect():
+            with self.connect() as orm:
                 with db_session:
-                    self._domain = set( (self.point(vertex.id) for vertex in all_vertices()) )
+                    self._domain = set( (self.point(vertex.id) for vertex in orm.all_vertices()) )
         return self._domain
 
     @property
     def ground_truth(self):
         # cached ground truth construction
         if self._ground_truth is None:
-            with self.connect():
+            with self.connect() as orm:
                 with db_session:
-                    self._ground_truth = set( (self.point(vertex.id) for vertex in positive_vertices()) )
+                    self._ground_truth = set( (self.point(vertex.id) for vertex in orm.positive_vertices()) )
         return self._ground_truth
 
 class Dataset:

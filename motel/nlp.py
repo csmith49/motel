@@ -1,14 +1,13 @@
 # get the local dependencies
-import orm
 import settings
 # set up logging
 import log
 logger = log.get("nlp")
 # load the nlp model
-logger.info("Loading NLP model (en_core_web_sm)...")
-import en_core_web_sm
-nlp = en_core_web_sm.load()
-logger.info("NLP model (en_core_web_sm) loaded.")
+logger.info("Loading NLP model (en_core_web_md)...")
+import en_core_web_md
+nlp = en_core_web_md.load()
+logger.info("NLP model (en_core_web_md) loaded.")
 # any extra deps
 import itertools, re
 
@@ -79,7 +78,7 @@ def process_token(token):
     return value, properties
 
 # convert a sentence
-def process_sentence(sentence, label):
+def process_sentence(sentence, label, orm):
     logger.info(f"Processing sentence: {sentence.text}")
 
     # construct node representing the sentence
@@ -136,7 +135,7 @@ def process_sentence(sentence, label):
     return sentence_id
 
 # simple test
-def process(str):
+def process(str, orm):
     # get the labels in the text
     labels = text_labels(str)
     
@@ -146,7 +145,7 @@ def process(str):
     # process each sentence
     sentences = []
     for sentence, label in zip(doc.sents, labels):
-        sentence_id = process_sentence(sentence, label)
+        sentence_id = process_sentence(sentence, label, orm)
         sentences.append(sentence_id)
 
     # chain the sentences together
