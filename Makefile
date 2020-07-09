@@ -17,11 +17,14 @@ mote/enumerate mote/evaluate: mote mote/bin/enumerate.ml mote/bin/evaluate.ml
 	$(MAKE) -C mote
 
 # making documents from text
-.PRECIOUS: data/documents/%.db
-data/documents/%.db: data/text/%.txt env
-	$(PYTHON) motel process\
-		--input $<\
-		--output $@
+# .PRECIOUS: data/documents/%.db
+# data/documents/%.db: data/text/%.txt env
+# 	$(PYTHON) motel process\
+# 		--input $<\
+# 		--output $@
+
+# data generation
+include data/data.mk
 
 # experiments
 include experiments/experiments.mk

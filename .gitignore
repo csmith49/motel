@@ -1,5 +1,5 @@
 # database files
-data/documents/*.db
+data/documents/**/*.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

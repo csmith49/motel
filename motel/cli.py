@@ -10,9 +10,12 @@ logger = log.get("cli")
 
 # entry point for the cli
 @click.group()
-def run():
+@click.option("--quiet", is_flag=True)
+def run(quiet):
     """Entry point for the CLI."""
-    pass
+    # if the quiet flag is passed, disable logging to stdout
+    if quiet:
+        log.enable_quiet_mode()
 
 # make a database from a single document
 @run.command()

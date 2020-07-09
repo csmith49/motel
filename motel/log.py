@@ -26,3 +26,6 @@ def get(module_name):
         Logger object specialized for the provided module.
     """
     return logging.getLogger(f"motel.{module_name}")
+
+def enable_quiet_mode():
+    logging.disable(logging.WARNING)
