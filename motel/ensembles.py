@@ -333,8 +333,8 @@ class MajorityVote(Disjunction):
         return "<majority-vote>"
 
 
-class WeightedVote(Ensemble):
-    """Ensemble using a weighted vote over motifs to classify points.
+class NaiveBayes(Ensemble):
+    """Ensemble using a Naive Bayes model over motifs to classify points.
     
     Parameters
     ----------
@@ -355,16 +355,16 @@ class WeightedVote(Ensemble):
     motifs : motifs.Motif list
         Motifs present in the ensemble.
     """
-    def __init__(self, image, approximate_fpr=True):
+    def __init__(self, image, approximate_fpr=False):
         super().__init__(image)
-        accuracy = np.array([len(image.motif_domain(motif)) for motif in self._motif_map]) / self.size
+        r_m = np.array([len(image.motif_domain(motif)) for motif in self._motif_map]) / self.size
         # initialize false-positive rate
         if approximate_fpr:
-            self._fpr = (accuracy - 1) / 2
+            self._fpr = (1 - r_m) / 2
         else:
             self._fpr = np.ones(len(self._motif_map)) * 0.1
         # internal weight matrix
-        self._w_c = accuracy
+        self._w_c = 1 + r_m
 
     def update(self, point, classification, learning_rate=None, decay=1, step=0, scale=1):
         """Update per-motif weights, given an observation.
@@ -389,17 +389,32 @@ class WeightedVote(Ensemble):
         scale : float, optional
             Amount to scale positive observations by. Defaults to 1.0.
         """
+
         # pull learning rate
         if learning_rate is None:
             learning_rate = settings.LEARNING_RATE
         # multiplicative updates to alpha
         v_i = self._point_map.index(point)
         if classification:
-            m_i = self._inclusion[v_i,] * -1 * scale
+            m_i = self._inclusion[v_i,] * -1
         else:
-            m_i = self._inclusion[v_i,]
+            m_i = self._inclusion[v_i,] * scale
 
-        self._fpr *= np.exp(-1 * learning_rate * m_i * (decay ** step))
+        self._fpr *= np.exp(learning_rate * m_i * (decay ** step))
+
+    @property
+    def accuracy(self):
+        """Per-motif probabilities that each motif correctly identifies a vertex.
+
+        Returns
+        -------
+        np.array
+            An [0,1]-valued np.Array whose dimensions match the Ensemble._motif_map attribute.
+        """
+
+        accuracy = self._w_c - 2 * self._fpr
+        return np.clip(accuracy, 0.001, 1)
+
 
     def probabilities(self):
         """Probabilities of positive classification for each point in the ensemble's domain.
@@ -411,16 +426,89 @@ class WeightedVote(Ensemble):
         np.array
             An [0,1]-valued np.Array whose dimensions match the `Ensemble._point_map` attribute.
         """
-        w_i = self._w_c - 2 * self._fpr
 
-        s_plus = self._inclusion @ np.transpose(w_i)
-        s_minus = (1 - self._inclusion) @ np.transpose(w_i)
-        denom = max(np.max(s_plus), np.max(s_minus))
+        acc = np.log(self.accuracy)
+        s_plus = self._inclusion @ np.transpose(acc)
+        s_minus = (1 - self._inclusion) @ np.transpose(acc)
 
-        plus = np.exp(s_plus / denom)
-        minus = np.exp(s_minus / denom)
+        m = np.maximum(s_plus, s_minus)
 
-        return plus / plus + minus
+        return np.exp(s_plus - m) / (np.exp(s_plus - m) + np.exp(s_minus - m))
+
+    def __str__(self):
+        return "<naive-bayes>"
+
+class WeightedVote(Ensemble):
+    """Ensemble using a weighted vote model over motifs to classify points.
+    
+    Parameters
+    ----------
+    image : img.SparseImage
+        A sparse image encoding a set of motifs and the points they select from a data set.
+
+    Attributes
+    ----------
+    size : int
+        Number of motifs present in the ensemble.
+
+    domain : img.Point list
+        Points classified by motifs in the ensemble.
+
+    motifs : motifs.Motif list
+        Motifs present in the ensemble.
+    """
+    def __init__(self, image):
+        super().__init__(image)
+        self._w = np.ones(len(self._motif_map)) * .5
+
+    def update(self, point, classification, learning_rate=None, decay=1, step=0):
+        """Update per-motif weights, given an observation.
+
+        Parameters
+        ----------
+        point : img.Point
+            The point being observed.
+        
+        classification : bool
+            The classification of the observation.
+
+        learning_rate : float, optional
+            Value scaling the amount internal weights are updated by. Defaults to `settings.LEARNING_RATE`.
+
+        decay : float, optional
+            Value determining by how much subsequent updates are scaled by. Defaults to 1.0.
+
+        step : int, optional
+            How many updates we've done so far - used to scale subsequent updates. Defaults to 0, making `decay` a non-factor.
+        """
+
+        # pull learning rate
+        if learning_rate is None:
+            learning_rate = settings.LEARNING_RATE
+        # multiplicative updates to alpha
+        v_i = self._point_map.index(point)
+        if classification:
+            M = (self._inclusion[v_i,] - 1/2) * 2
+        else:
+            M = (self._inclusion[v_i,] - 1/2) * -2
+
+        self._w *= np.exp(M * learning_rate * (decay ** step))
+
+    def probabilities(self):
+        """Probabilities of positive classification for each point in the ensemble's domain.
+
+        In a weighted vote, the probability is computed via vote ratio.
+
+        Returns
+        -------
+        np.array
+            An [0,1]-valued np.Array whose dimensions match the `Ensemble._point_map` attribute.
+        """
+
+        s_plus = self._inclusion @ np.transpose(self._w)
+        s_minus = (1 - self._inclusion) @ np.transpose(self._w)
+
+        return s_plus / (s_plus + s_minus)
 
     def __str__(self):
         return "<weighted-vote>"

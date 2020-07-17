@@ -188,6 +188,43 @@ def evaluate_weighted_vote(image, dataset, active_learning_steps=10):
                 logger.info(f"Split {split} found with ground truth {truth}.")
                 # update the ensemble
                 logger.info(f"Updating ensemble {ensemble}...")
+                ensemble.update(split, truth, learning_rate=None, decay=1, step=step)
+                logger.info(f"Ensemble {ensemble} updated.")
+            else:
+                logger.info(f"No viable split found for ensemble {ensemble}.")
+    return results
+
+def evaluate_naive_bayes(image, dataset, active_learning_steps=10):
+    # load the data
+    logger.info(f"Constructing Naive Bayes ensemble from {image}...")
+    ensemble = ensembles.NaiveBayes(image)
+    logger.info(f"Extracting ground truth from {dataset}...")
+    ground_truth = set(dataset.ground_truth(split=doc.Split.TEST))
+    # build active learning data
+    learnable = set(dataset.filter_points(image.domain, split=doc.Split.TEST))
+    learned = set()
+    # start evaluation
+    results = []
+    logger.info(f"Evaluating ensemble {ensemble}...")
+    for step in range(active_learning_steps):
+        # compute stats
+        logger.info(f"Evaluating ensemble {ensemble} on active-learning step {step}...")
+        predicted = set(dataset.filter_points(ensemble.classified(), doc.Split.TEST))
+        stats = result_row(predicted, ground_truth, ensemble="naive-bayes", step=step)
+        logger.info(f"Ensemble {ensemble} on active-learning step {step} evaluated.")
+        logger.info(f"Ensemble {ensemble} performance (P / R): {stats['precision']} / {stats['recall']}")
+        results.append(stats)
+        # see if we can split
+        if step != (active_learning_steps - 1):
+            logger.info(f"Looking for a split for ensemble {ensemble}...")
+            split = min_absolute_logit(ensemble, learnable - learned)
+            if split is not None:
+                learnable.remove(split)
+                learned.add(split)
+                truth = (split in ground_truth)
+                logger.info(f"Split {split} found with ground truth {truth}.")
+                # update the ensemble
+                logger.info(f"Updating ensemble {ensemble}...")
                 ensemble.update(split, truth, learning_rate=None, decay=1, step=step, scale=1)
                 logger.info(f"Ensemble {ensemble} updated.")
             else:

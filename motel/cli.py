@@ -161,6 +161,8 @@ def evaluate(image, documents, output, thresholds, active_learning_steps):
     results += stats.evaluate_majority_vote(image, dataset, thresholds=thresholds)
     # step 3 - weighted vote
     results += stats.evaluate_weighted_vote(image, dataset, active_learning_steps=active_learning_steps)
+    # step 4 - naive bayes
+    results += stats.evaluate_naive_bayes(image, dataset, active_learning_steps=active_learning_steps)
     # print out results to output
     if output:
         logger.info(f"Initiating writing output to {output}...")

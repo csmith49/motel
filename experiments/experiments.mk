@@ -20,8 +20,7 @@ experiments/%/motifs.jsonl: mote/enumerate experiments/%/neighborhoods.jsonl
 	@mote/enumerate\
 		--input experiments/$*/neighborhoods.jsonl\
 		--output experiments/$*/motifs.jsonl\
-		--strategy sample\
-		--sample-goal 1500
+		--strategy enumerate
 
 # General Step 3: evaluate the motifs on the test set
 .PRECIOUS: experiments/%/image.jsonl
